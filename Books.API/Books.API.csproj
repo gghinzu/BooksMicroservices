@@ -8,11 +8,15 @@
 
     <ItemGroup>
         <ProjectReference Include="..\CORE\CORE.csproj" />
+        <ProjectReference Include="..\Books.APP\Books.APP.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.25" />
+        <PackageReference Include="MediatR" Version="14.1.0" />
+        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.25" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     </ItemGroup>
-
+    
 </Project>
