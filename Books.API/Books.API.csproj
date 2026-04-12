@@ -2,21 +2,30 @@
 
     <PropertyGroup>
         <TargetFramework>net8.0</TargetFramework>
-        <Nullable>disable</Nullable>
+        <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\CORE\CORE.csproj" />
-        <ProjectReference Include="..\Books.APP\Books.APP.csproj" />
+        <Compile Remove="Templates\**" />
+        <Content Remove="Templates\**" />
+        <EmbeddedResource Remove="Templates\**" />
+        <None Remove="Templates\**" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.25" />
-        <PackageReference Include="MediatR" Version="14.1.0" />
-        <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="11.1.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.25">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.25" />
+        <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.23" />
         <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
     </ItemGroup>
-    
+
+    <ItemGroup>
+        <ProjectReference Include="..\Books.APP\Books.APP.csproj" />
+        <ProjectReference Include="..\CORE\CORE.csproj" />
+    </ItemGroup>
+
 </Project>
