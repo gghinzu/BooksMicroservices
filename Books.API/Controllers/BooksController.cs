@@ -28,7 +28,8 @@ namespace Books.API.Controllers
         {
             try
             {
-                var list = await _mediator.Send(new BookQueryRequest());
+                var response = await _mediator.Send(new BookQueryRequest());
+                var list = await response.ToListAsync();
                 if (list.Any())
                     return Ok(list);
                 return NoContent();
@@ -46,7 +47,7 @@ namespace Books.API.Controllers
             try
             {
                 var response = await _mediator.Send(new BookQueryRequest());
-                var item = response.SingleOrDefault(r => r.Id == id);
+                var item = await response.SingleOrDefaultAsync(r => r.Id == id);
                 if (item is not null)
                     return Ok(item);
                 return NoContent();

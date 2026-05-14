@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Books.APP.Features.Books
 {
-    public class BookQueryRequest : Request, IRequest<List<BookQueryResponse>>
+    public class BookQueryRequest : Request, IRequest<IQueryable<BookQueryResponse>>
     {
     }
 
@@ -43,7 +43,7 @@ namespace Books.APP.Features.Books
         public List<GenreQueryResponse> Genres { get; set; }
     }
 
-    public class BookQueryHandler : Service<Book>, IRequestHandler<BookQueryRequest, List<BookQueryResponse>>
+    public class BookQueryHandler : Service<Book>, IRequestHandler<BookQueryRequest, IQueryable<BookQueryResponse>>
     {
         public BookQueryHandler(DbContext db) : base(db)
         {
@@ -59,11 +59,9 @@ namespace Books.APP.Features.Books
                 .ThenBy(b => b.Name);
         }
 
-        public async Task<List<BookQueryResponse>> Handle(BookQueryRequest request, CancellationToken cancellationToken)
+        public Task<IQueryable<BookQueryResponse>> Handle(BookQueryRequest request, CancellationToken cancellationToken)
         {
-            var entities = await DbSet().ToListAsync(cancellationToken);
-
-            var list = entities.Select(b => new BookQueryResponse
+            var query = DbSet().Select(b => new BookQueryResponse
             {
                 Id = b.Id,
                 Name = b.Name,
@@ -94,9 +92,8 @@ namespace Books.APP.Features.Books
                     Id = bg.Genre.Id,
                     Name = bg.Genre.Name
                 }).ToList()
-            }).ToList();
-
-            return list;
+            });
+            return Task.FromResult(query);
         }
     }
 }

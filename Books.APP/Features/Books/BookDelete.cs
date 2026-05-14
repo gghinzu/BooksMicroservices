@@ -16,6 +16,11 @@ namespace Books.APP.Features.Books
         {
         }
 
+        protected override IQueryable<Book> DbSet()
+        {
+            return base.DbSet().Include(b => b.BookGenres);
+        }
+
         public async Task<CommandResponse> Handle(BookDeleteRequest request, CancellationToken cancellationToken)
         {
             var entity = await DbSet().SingleOrDefaultAsync(b => b.Id == request.Id, cancellationToken);
@@ -23,9 +28,10 @@ namespace Books.APP.Features.Books
             if (entity is null)
                 return Error("Book not found!");
 
+            Delete(entity.BookGenres);
             await DeleteAsync(entity, cancellationToken);
 
-            return Success($"Book with id {request.Id} deleted successfully.", entity.Id);
+            return Success("Book deleted successfully.", entity.Id);
         }
     }
 }
