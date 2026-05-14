@@ -1,6 +1,8 @@
-using Books.APP.Features.Authors;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MediatR;
+using CORE.APP.Models;
+using Books.APP.Features.Authors;
 
 namespace Books.API.Controllers
 {
@@ -8,51 +10,114 @@ namespace Books.API.Controllers
     [ApiController]
     public class AuthorsController : ControllerBase
     {
+        private readonly ILogger<AuthorsController> _logger;
         private readonly IMediator _mediator;
 
-        public AuthorsController(IMediator mediator)
+        public AuthorsController(ILogger<AuthorsController> logger, IMediator mediator)
         {
+            _logger = logger;
             _mediator = mediator;
         }
 
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            var result = await _mediator.Send(new AuthorQueryRequest());
-            return Ok(result);
+            try
+            {
+                var response = await _mediator.Send(new AuthorQueryRequest());
+                var list = await response.ToListAsync();
+                if (list.Any())
+                    return Ok(list);
+                return NoContent();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("AuthorsGet Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during AuthorsGet."));
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Get(int id)
+        {
+            try
+            {
+                var response = await _mediator.Send(new AuthorQueryRequest());
+                var item = await response.SingleOrDefaultAsync(r => r.Id == id);
+                if (item is not null)
+                    return Ok(item);
+                return NoContent();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("AuthorsGetById Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during AuthorsGetById."));
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Post(AuthorCreateRequest request)
         {
-            var result = await _mediator.Send(request);
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var response = await _mediator.Send(request);
+                    if (response.IsSuccessful)
+                        return Ok(response);
 
-            if (!result.IsSuccessful)
-                return BadRequest(result);
+                    ModelState.AddModelError("AuthorsPost", response.Message);
+                }
 
-            return Ok(result);
+                return BadRequest(new CommandResponse(false, string.Join("|", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))));
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("AuthorsPost Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during AuthorsPost."));
+            }
         }
 
         [HttpPut]
         public async Task<IActionResult> Put(AuthorUpdateRequest request)
         {
-            var result = await _mediator.Send(request);
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var response = await _mediator.Send(request);
+                    if (response.IsSuccessful)
+                        return Ok(response);
 
-            if (!result.IsSuccessful)
-                return BadRequest(result);
+                    ModelState.AddModelError("AuthorsPut", response.Message);
+                }
 
-            return Ok(result);
+                return BadRequest(new CommandResponse(false, string.Join("|", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))));
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("AuthorsPut Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during AuthorsPut."));
+            }
         }
 
-        [HttpDelete]
-        public async Task<IActionResult> Delete(AuthorDeleteRequest request)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var result = await _mediator.Send(request);
+            try
+            {
+                var response = await _mediator.Send(new AuthorDeleteRequest() { Id = id });
+                if (response.IsSuccessful)
+                    return Ok(response);
 
-            if (!result.IsSuccessful)
-                return BadRequest(result);
-
-            return Ok(result);
+                ModelState.AddModelError("AuthorsDelete", response.Message);
+                return BadRequest(new CommandResponse(false, string.Join("|", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))));
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("AuthorsDelete Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during AuthorsDelete."));
+            }
         }
     }
 }
