@@ -21,9 +21,9 @@ namespace Users.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(TokenRequest request)
         {
-            request.SecurityKey = _configuration["SecurityKey"];
-            request.Issuer = _configuration["Issuer"];
-            request.Audience = _configuration["Audience"];
+            request.SecurityKey = _configuration["JwtSettings:Key"];
+            request.Issuer = _configuration["JwtSettings:Issuer"];
+            request.Audience = _configuration["JwtSettings:Audience"];
 
             var response = await _mediator.Send(request);
             if (response is not null)
@@ -35,9 +35,9 @@ namespace Users.API.Controllers
         [HttpPost("Refresh")]
         public async Task<IActionResult> Refresh(RefreshTokenRequest request)
         {
-            request.SecurityKey = _configuration["SecurityKey"];
-            request.Issuer = _configuration["Issuer"];
-            request.Audience = _configuration["Audience"];
+            request.SecurityKey = _configuration["JwtSettings:Key"];
+            request.Issuer = _configuration["JwtSettings:Issuer"];
+            request.Audience = _configuration["JwtSettings:Audience"];
 
             var response = await _mediator.Send(request);
             if (response is not null)
