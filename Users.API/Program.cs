@@ -22,8 +22,6 @@ foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = jwtSettings["Key"]!;
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -35,9 +33,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            ValidIssuer = builder.Configuration["Issuer"],
+            ValidAudience = builder.Configuration["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["SecurityKey"]!)),
             ClockSkew = TimeSpan.Zero
         };
     });

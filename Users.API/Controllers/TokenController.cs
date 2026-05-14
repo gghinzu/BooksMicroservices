@@ -7,12 +7,12 @@ namespace Users.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TokensController : ControllerBase
+    public class TokenController : ControllerBase
     {
         private readonly IMediator _mediator;
         private readonly IConfiguration _configuration;
 
-        public TokensController(IMediator mediator, IConfiguration configuration)
+        public TokenController(IMediator mediator, IConfiguration configuration)
         {
             _mediator = mediator;
             _configuration = configuration;
@@ -21,11 +21,12 @@ namespace Users.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Post(TokenRequest request)
         {
-            request.SecurityKey = _configuration["JwtSettings:Key"];
-            request.Issuer = _configuration["JwtSettings:Issuer"];
-            request.Audience = _configuration["JwtSettings:Audience"];
+            request.SecurityKey = _configuration["SecurityKey"];
+            request.Issuer = _configuration["Issuer"];
+            request.Audience = _configuration["Audience"];
 
             var response = await _mediator.Send(request);
+
             if (response is not null)
                 return Ok(response);
 
@@ -35,11 +36,12 @@ namespace Users.API.Controllers
         [HttpPost("Refresh")]
         public async Task<IActionResult> Refresh(RefreshTokenRequest request)
         {
-            request.SecurityKey = _configuration["JwtSettings:Key"];
-            request.Issuer = _configuration["JwtSettings:Issuer"];
-            request.Audience = _configuration["JwtSettings:Audience"];
+            request.SecurityKey = _configuration["SecurityKey"];
+            request.Issuer = _configuration["Issuer"];
+            request.Audience = _configuration["Audience"];
 
             var response = await _mediator.Send(request);
+
             if (response is not null)
                 return Ok(response);
 
