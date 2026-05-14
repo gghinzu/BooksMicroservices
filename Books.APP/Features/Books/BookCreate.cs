@@ -22,7 +22,7 @@ namespace Books.APP.Features.Books
 
         public int AuthorId { get; set; }
 
-        public List<int> GenreIds { get; set; } = new();
+        public List<int> GenreIds { get; set; } = new List<int>();
     }
 
     public class BookCreateHandler : Service<Book>, IRequestHandler<BookCreateRequest, CommandResponse>
@@ -34,16 +34,17 @@ namespace Books.APP.Features.Books
         public async Task<CommandResponse> Handle(BookCreateRequest request, CancellationToken cancellationToken)
         {
             if (await DbSet().AnyAsync(b => b.Name == request.Name.Trim(), cancellationToken))
-                return Error($"Book with name {request.Name.Trim()} already exists!");
+                return Error($"Book with the same name: \"{request.Name.Trim()}\" exists!");
 
             if (!await DbSet<Author>().AnyAsync(a => a.Id == request.AuthorId, cancellationToken))
-                return Error("Author not found!");
+                return Error("Related author not found!");
 
-            var invalidGenreIds = request.GenreIds.Any() &&
-                                  await DbSet<Genre>().CountAsync(g => request.GenreIds.Contains(g.Id), cancellationToken) != request.GenreIds.Count;
-
-            if (invalidGenreIds)
-                return Error("One or more genres were not found!");
+            if (request.GenreIds.Any())
+            {
+                var count = await DbSet<Genre>().CountAsync(g => request.GenreIds.Contains(g.Id), cancellationToken);
+                if (count != request.GenreIds.Count)
+                    return Error("Related genre or genres not found!");
+            }
 
             var entity = new Book
             {
@@ -52,16 +53,9 @@ namespace Books.APP.Features.Books
                 PublishDate = request.PublishDate,
                 Price = request.Price,
                 IsTopSeller = request.IsTopSeller,
-                AuthorId = request.AuthorId
+                AuthorId = request.AuthorId,
+                GenreIds = request.GenreIds
             };
-
-            if (request.GenreIds.Any())
-            {
-                entity.BookGenres = request.GenreIds.Select(genreId => new BookGenre
-                {
-                    GenreId = genreId
-                }).ToList();
-            }
 
             await CreateAsync(entity, cancellationToken);
 

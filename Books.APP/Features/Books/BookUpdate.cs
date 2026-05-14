@@ -22,7 +22,7 @@ namespace Books.APP.Features.Books
 
         public int AuthorId { get; set; }
 
-        public List<int> GenreIds { get; set; } = new();
+        public List<int> GenreIds { get; set; } = new List<int>();
     }
 
     public class BookUpdateHandler : Service<Book>, IRequestHandler<BookUpdateRequest, CommandResponse>
@@ -33,24 +33,23 @@ namespace Books.APP.Features.Books
 
         public async Task<CommandResponse> Handle(BookUpdateRequest request, CancellationToken cancellationToken)
         {
-            var entity = await DbSet()
-                .Include(b => b.BookGenres)
-                .SingleOrDefaultAsync(b => b.Id == request.Id, cancellationToken);
+            if (await DbSet().AnyAsync(b => b.Id != request.Id && b.Name == request.Name.Trim(), cancellationToken))
+                return Error($"Book with the same name: \"{request.Name.Trim()}\" exists!");
+
+            var entity = await DbSet().Include(b => b.BookGenres).SingleOrDefaultAsync(b => b.Id == request.Id, cancellationToken);
 
             if (entity is null)
                 return Error("Book not found!");
 
-            if (await DbSet().AnyAsync(b => b.Id != request.Id && b.Name == request.Name.Trim(), cancellationToken))
-                return Error($"Book with name {request.Name.Trim()} already exists!");
-
             if (!await DbSet<Author>().AnyAsync(a => a.Id == request.AuthorId, cancellationToken))
-                return Error("Author not found!");
+                return Error("Related author not found!");
 
-            var invalidGenreIds = request.GenreIds.Any() &&
-                                  await DbSet<Genre>().CountAsync(g => request.GenreIds.Contains(g.Id), cancellationToken) != request.GenreIds.Count;
-
-            if (invalidGenreIds)
-                return Error("One or more genres were not found!");
+            if (request.GenreIds.Any())
+            {
+                var count = await DbSet<Genre>().CountAsync(g => request.GenreIds.Contains(g.Id), cancellationToken);
+                if (count != request.GenreIds.Count)
+                    return Error("Related genre or genres not found!");
+            }
 
             entity.Name = request.Name?.Trim();
             entity.NumberOfPages = request.NumberOfPages;
@@ -58,19 +57,11 @@ namespace Books.APP.Features.Books
             entity.Price = request.Price;
             entity.IsTopSeller = request.IsTopSeller;
             entity.AuthorId = request.AuthorId;
-
-            if (entity.BookGenres.Any())
-                Delete(entity.BookGenres);
-
-            entity.BookGenres = request.GenreIds.Select(genreId => new BookGenre
-            {
-                BookId = entity.Id,
-                GenreId = genreId
-            }).ToList();
+            entity.GenreIds = request.GenreIds;
 
             await UpdateAsync(entity, cancellationToken);
 
-            return Success($"Book with id {request.Id} updated successfully.", entity.Id);
+            return Success($"Book with name {request.Name.Trim()} updated successfully.", entity.Id);
         }
     }
 }
