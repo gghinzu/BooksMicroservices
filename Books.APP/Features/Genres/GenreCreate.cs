@@ -22,7 +22,7 @@ namespace Books.APP.Features.Genres
         public async Task<CommandResponse> Handle(GenreCreateRequest request, CancellationToken cancellationToken)
         {
             if (await DbSet().AnyAsync(g => g.Name == request.Name.Trim(), cancellationToken))
-                return Error($"Genre with name {request.Name.Trim()} already exists!");
+                return Error($"Genre with the same name: \"{request.Name.Trim()}\" exists!");
 
             var entity = new Genre
             {

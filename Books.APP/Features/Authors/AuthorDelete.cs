@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Books.APP.Features.Authors
 {
-
     public class AuthorDeleteRequest : Request, IRequest<CommandResponse>
     {
     }

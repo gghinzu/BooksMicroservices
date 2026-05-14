@@ -24,10 +24,8 @@ namespace Books.APP.Features.Authors
 
         public async Task<CommandResponse> Handle(AuthorCreateRequest request, CancellationToken cancellationToken)
         {
-            if (await DbSet().AnyAsync(a =>
-                    a.FirstName == request.FirstName.Trim() &&
-                    a.LastName == request.LastName.Trim(), cancellationToken))
-                return Error($"Author {request.FirstName.Trim()} {request.LastName.Trim()} already exists!");
+            if (await DbSet().AnyAsync(a => a.FirstName == request.FirstName.Trim() && a.LastName == request.LastName.Trim(), cancellationToken))
+                return Error($"Author with the same full name: \"{request.FirstName.Trim()} {request.LastName.Trim()}\" exists!");
 
             var entity = new Author
             {
@@ -37,9 +35,7 @@ namespace Books.APP.Features.Authors
 
             await CreateAsync(entity, cancellationToken);
 
-            return Success(
-                $"Author {request.FirstName.Trim()} {request.LastName.Trim()} created successfully.",
-                entity.Id);
+            return Success($"Author with full name {request.FirstName.Trim()} {request.LastName.Trim()} created successfully.", entity.Id);
         }
     }
 }
