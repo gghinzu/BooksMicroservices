@@ -36,6 +36,10 @@ namespace Users.APP.Domain
 
         public int? GroupId { get; set; }
 
+        public string RefreshToken { get; set; }
+
+        public DateTime? RefreshTokenExpiration { get; set; }
+
         public Group Group { get; set; }
 
         public List<UserRole> UserRoles { get; set; } = new List<UserRole>();
