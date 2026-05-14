@@ -1,12 +1,13 @@
-#nullable disable
 using CORE.APP.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Users.APP.Features.Roles;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Users.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class RolesController : ControllerBase
@@ -21,6 +22,7 @@ namespace Users.API.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> Get()
         {
             try
@@ -57,6 +59,7 @@ namespace Users.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Post(RoleCreateRequest request)
         {
             try
@@ -80,6 +83,7 @@ namespace Users.API.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Put(RoleUpdateRequest request)
         {
             try
@@ -103,6 +107,7 @@ namespace Users.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             try

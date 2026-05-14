@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Books.APP.Features.Books
 {
-    public class BookQueryRequest : Request, IRequest<IQueryable<BookQueryResponse>>
+    public class BookQueryRequest : Request, IRequest<List<BookQueryResponse>>
     {
     }
 
@@ -43,7 +43,7 @@ namespace Books.APP.Features.Books
         public List<GenreQueryResponse> Genres { get; set; }
     }
 
-    public class BookQueryHandler : Service<Book>, IRequestHandler<BookQueryRequest, IQueryable<BookQueryResponse>>
+    public class BookQueryHandler : Service<Book>, IRequestHandler<BookQueryRequest, List<BookQueryResponse>>
     {
         public BookQueryHandler(DbContext db) : base(db)
         {
@@ -51,15 +51,19 @@ namespace Books.APP.Features.Books
 
         protected override IQueryable<Book> DbSet()
         {
-            return base.DbSet().Include(b => b.Author)
-                .Include(b => b.BookGenres).ThenInclude(bg => bg.Genre)
-                .OrderByDescending(b => b.PublishDate).ThenBy(b => b.Price)
+            return base.DbSet()
+                .Include(b => b.Author)
+                .Include(b => b.BookGenres)
+                .ThenInclude(bg => bg.Genre)
+                .OrderByDescending(b => b.PublishDate)
                 .ThenBy(b => b.Name);
         }
 
-        public Task<IQueryable<BookQueryResponse>> Handle(BookQueryRequest request, CancellationToken cancellationToken)
+        public async Task<List<BookQueryResponse>> Handle(BookQueryRequest request, CancellationToken cancellationToken)
         {
-            var query = DbSet().Select(b => new BookQueryResponse
+            var entities = await DbSet().ToListAsync(cancellationToken);
+
+            var list = entities.Select(b => new BookQueryResponse
             {
                 Id = b.Id,
                 Name = b.Name,
@@ -68,7 +72,7 @@ namespace Books.APP.Features.Books
                 Price = b.Price,
                 IsTopSeller = b.IsTopSeller,
                 AuthorId = b.AuthorId,
-                GenreIds = b.GenreIds,
+                GenreIds = b.BookGenres.Select(bg => bg.GenreId).ToList(),
 
                 IsTopSellerF = b.IsTopSeller ? "Top Seller" : "No Top Seller",
                 PriceF = b.Price.ToString("C2"),
@@ -90,9 +94,9 @@ namespace Books.APP.Features.Books
                     Id = bg.Genre.Id,
                     Name = bg.Genre.Name
                 }).ToList()
-            });
+            }).ToList();
 
-            return Task.FromResult(query);
+            return list;
         }
     }
 }

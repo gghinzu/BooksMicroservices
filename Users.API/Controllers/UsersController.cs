@@ -1,12 +1,13 @@
-#nullable disable
 using CORE.APP.Models;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Users.APP.Features.Users;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Users.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
@@ -21,12 +22,12 @@ namespace Users.API.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> Get()
         {
             try
             {
-                var response = await _mediator.Send(new UserQueryRequest());
-                var list = await response.ToListAsync();
+                var list = await _mediator.Send(new UserQueryRequest());
                 if (list.Any())
                     return Ok(list);
                 return NoContent();
@@ -39,12 +40,13 @@ namespace Users.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<IActionResult> Get(int id)
         {
             try
             {
                 var response = await _mediator.Send(new UserQueryRequest());
-                var item = await response.SingleOrDefaultAsync(r => r.Id == id);
+                var item = response.SingleOrDefault(r => r.Id == id);
                 if (item is not null)
                     return Ok(item);
                 return NoContent();
@@ -57,6 +59,7 @@ namespace Users.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Post(UserCreateRequest request)
         {
             try
@@ -80,6 +83,7 @@ namespace Users.API.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Put(UserUpdateRequest request)
         {
             try
@@ -103,6 +107,7 @@ namespace Users.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             try

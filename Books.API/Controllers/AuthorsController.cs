@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using MediatR;
 using CORE.APP.Models;
 using Books.APP.Features.Authors;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Books.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class AuthorsController : ControllerBase
@@ -18,8 +20,9 @@ namespace Books.API.Controllers
             _logger = logger;
             _mediator = mediator;
         }
-
+        
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> Get()
         {
             try
@@ -56,6 +59,7 @@ namespace Books.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Post(AuthorCreateRequest request)
         {
             try
@@ -79,6 +83,7 @@ namespace Books.API.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Put(AuthorUpdateRequest request)
         {
             try
@@ -102,6 +107,7 @@ namespace Books.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             try

@@ -4,9 +4,11 @@ using Microsoft.EntityFrameworkCore;
 using MediatR;
 using CORE.APP.Models;
 using Books.APP.Features.Books;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Books.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class BooksController : ControllerBase
@@ -21,12 +23,12 @@ namespace Books.API.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> Get()
         {
             try
             {
-                var response = await _mediator.Send(new BookQueryRequest());
-                var list = await response.ToListAsync();
+                var list = await _mediator.Send(new BookQueryRequest());
                 if (list.Any())
                     return Ok(list);
                 return NoContent();
@@ -44,7 +46,7 @@ namespace Books.API.Controllers
             try
             {
                 var response = await _mediator.Send(new BookQueryRequest());
-                var item = await response.SingleOrDefaultAsync(r => r.Id == id);
+                var item = response.SingleOrDefault(r => r.Id == id);
                 if (item is not null)
                     return Ok(item);
                 return NoContent();
@@ -57,6 +59,7 @@ namespace Books.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Post(BookCreateRequest request)
         {
             try
@@ -80,6 +83,7 @@ namespace Books.API.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Put(BookUpdateRequest request)
         {
             try
@@ -103,6 +107,7 @@ namespace Books.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             try

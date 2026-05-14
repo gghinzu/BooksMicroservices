@@ -8,7 +8,7 @@ using Users.APP.Features.Roles;
 
 namespace Users.APP.Features.Users
 {
-    public class UserQueryRequest : Request, IRequest<IQueryable<UserQueryResponse>>
+    public class UserQueryRequest : Request, IRequest<List<UserQueryResponse>>
     {
     }
 
@@ -63,7 +63,7 @@ namespace Users.APP.Features.Users
         public List<RoleQueryResponse> Roles { get; set; }
     }
 
-    public class UserQueryHandler : Service<User>, IRequestHandler<UserQueryRequest, IQueryable<UserQueryResponse>>
+    public class UserQueryHandler : Service<User>, IRequestHandler<UserQueryRequest, List<UserQueryResponse>>
     {
         public UserQueryHandler(DbContext db) : base(db)
         {
@@ -71,14 +71,20 @@ namespace Users.APP.Features.Users
 
         protected override IQueryable<User> DbSet()
         {
-            return base.DbSet().Include(userEntity => userEntity.Group)
-                .Include(userEntity => userEntity.UserRoles).ThenInclude(userRoleEntity => userRoleEntity.Role)
-                .OrderByDescending(userEntity => userEntity.IsActive).ThenByDescending(userEntity => userEntity.RegistrationDate).ThenBy(userEntity => userEntity.UserName);
+            return base.DbSet()
+                .Include(userEntity => userEntity.Group)
+                .Include(userEntity => userEntity.UserRoles)
+                .ThenInclude(userRoleEntity => userRoleEntity.Role)
+                .OrderByDescending(userEntity => userEntity.IsActive)
+                .ThenByDescending(userEntity => userEntity.RegistrationDate)
+                .ThenBy(userEntity => userEntity.UserName);
         }
 
-        public Task<IQueryable<UserQueryResponse>> Handle(UserQueryRequest request, CancellationToken cancellationToken)
+        public async Task<List<UserQueryResponse>> Handle(UserQueryRequest request, CancellationToken cancellationToken)
         {
-            var query = DbSet().Select(userEntity => new UserQueryResponse
+            var entities = await DbSet().ToListAsync(cancellationToken);
+
+            var list = entities.Select(userEntity => new UserQueryResponse
             {
                 Address = userEntity.Address,
                 BirthDate = userEntity.BirthDate,
@@ -92,7 +98,7 @@ namespace Users.APP.Features.Users
                 LastName = userEntity.LastName,
                 Password = userEntity.Password,
                 RegistrationDate = userEntity.RegistrationDate,
-                RoleIds = userEntity.RoleIds,
+                RoleIds = userEntity.UserRoles.Select(userRoleEntity => userRoleEntity.RoleId).ToList(),
                 Score = userEntity.Score,
                 UserName = userEntity.UserName,
 
@@ -103,8 +109,8 @@ namespace Users.APP.Features.Users
                 RegistrationDateF = userEntity.RegistrationDate.ToString("MM/dd/yyyy HH:mm:ss"),
                 BirthDateF = userEntity.BirthDate.HasValue ? userEntity.BirthDate.Value.ToString("MM/dd/yyyy") : string.Empty,
 
-                GroupF = userEntity.Group.Title,
-                Group = new GroupQueryResponse
+                GroupF = userEntity.Group is not null ? userEntity.Group.Title : string.Empty,
+                Group = userEntity.Group is null ? null : new GroupQueryResponse
                 {
                     Id = userEntity.Group.Id,
                     Title = userEntity.Group.Title
@@ -116,9 +122,9 @@ namespace Users.APP.Features.Users
                     Id = userRoleEntity.Role.Id,
                     Name = userRoleEntity.Role.Name,
                 }).ToList()
-            });
+            }).ToList();
 
-            return Task.FromResult(query);
+            return list;
         }
     }
 }

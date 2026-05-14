@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using MediatR;
 using CORE.APP.Models;
 using Books.APP.Features.Genres;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Books.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class GenresController : ControllerBase
@@ -20,6 +22,7 @@ namespace Books.API.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> Get()
         {
             try
@@ -56,6 +59,7 @@ namespace Books.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Post(GenreCreateRequest request)
         {
             try
@@ -79,6 +83,7 @@ namespace Books.API.Controllers
         }
 
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Put(GenreUpdateRequest request)
         {
             try
@@ -102,6 +107,7 @@ namespace Books.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Delete(int id)
         {
             try
