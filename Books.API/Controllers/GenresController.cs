@@ -1,6 +1,8 @@
-using Books.APP.Features.Genres;
-using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MediatR;
+using CORE.APP.Models;
+using Books.APP.Features.Genres;
 
 namespace Books.API.Controllers
 {
@@ -8,51 +10,114 @@ namespace Books.API.Controllers
     [ApiController]
     public class GenresController : ControllerBase
     {
+        private readonly ILogger<GenresController> _logger;
         private readonly IMediator _mediator;
 
-        public GenresController(IMediator mediator)
+        public GenresController(ILogger<GenresController> logger, IMediator mediator)
         {
+            _logger = logger;
             _mediator = mediator;
         }
 
         [HttpGet]
         public async Task<IActionResult> Get()
         {
-            var result = await _mediator.Send(new GenreQueryRequest());
-            return Ok(result);
+            try
+            {
+                var response = await _mediator.Send(new GenreQueryRequest());
+                var list = await response.ToListAsync();
+                if (list.Any())
+                    return Ok(list);
+                return NoContent();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("GenresGet Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during GenresGet."));
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> Get(int id)
+        {
+            try
+            {
+                var response = await _mediator.Send(new GenreQueryRequest());
+                var item = await response.SingleOrDefaultAsync(r => r.Id == id);
+                if (item is not null)
+                    return Ok(item);
+                return NoContent();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("GenresGetById Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during GenresGetById."));
+            }
         }
 
         [HttpPost]
         public async Task<IActionResult> Post(GenreCreateRequest request)
         {
-            var result = await _mediator.Send(request);
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var response = await _mediator.Send(request);
+                    if (response.IsSuccessful)
+                        return Ok(response);
 
-            if (!result.IsSuccessful)
-                return BadRequest(result);
+                    ModelState.AddModelError("GenresPost", response.Message);
+                }
 
-            return Ok(result);
+                return BadRequest(new CommandResponse(false, string.Join("|", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))));
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("GenresPost Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during GenresPost."));
+            }
         }
 
         [HttpPut]
         public async Task<IActionResult> Put(GenreUpdateRequest request)
         {
-            var result = await _mediator.Send(request);
+            try
+            {
+                if (ModelState.IsValid)
+                {
+                    var response = await _mediator.Send(request);
+                    if (response.IsSuccessful)
+                        return Ok(response);
 
-            if (!result.IsSuccessful)
-                return BadRequest(result);
+                    ModelState.AddModelError("GenresPut", response.Message);
+                }
 
-            return Ok(result);
+                return BadRequest(new CommandResponse(false, string.Join("|", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))));
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("GenresPut Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during GenresPut."));
+            }
         }
 
-        [HttpDelete]
-        public async Task<IActionResult> Delete(GenreDeleteRequest request)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var result = await _mediator.Send(request);
+            try
+            {
+                var response = await _mediator.Send(new GenreDeleteRequest() { Id = id });
+                if (response.IsSuccessful)
+                    return Ok(response);
 
-            if (!result.IsSuccessful)
-                return BadRequest(result);
-
-            return Ok(result);
+                ModelState.AddModelError("GenresDelete", response.Message);
+                return BadRequest(new CommandResponse(false, string.Join("|", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage))));
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError("GenresDelete Exception: " + exception.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new CommandResponse(false, "An exception occured during GenresDelete."));
+            }
         }
     }
 }
